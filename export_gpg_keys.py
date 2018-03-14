@@ -68,7 +68,7 @@ def main(args):
     parser.add_argument('-d', '--dryrun', help='Dry Run - Only show GPG keys',
         required=False, action="store_true")
     parser.add_argument('-t', '--target', help='Define target director for keys',
-        required=True)
+        required=False)
     parser.add_argument('-p', '--plain', help='No faked directory structure for satellite',
         required=False, action="store_true")
 
@@ -93,8 +93,11 @@ def main(args):
 
     # store GPG keys to given export dir
     if not dry_run:
-        targetdir = args.target
-        store_gpg(gpg_result,targetdir,plain)
+        if args.target:
+            targetdir = args.target
+            store_gpg(gpg_result,targetdir,plain)
+        else:
+            parser.print_help()
     else:
         print json.dumps(gpg_result, indent=4, sort_keys=False)
 
