@@ -26,24 +26,28 @@ def get_gpg(org_id):
 
     return gpg['results']
 
-def store_gpg(gpg_result,targetdir):
+def store_gpg(gpg_result,targetdir,plain):
     """
-    Export GPG keys in faked satellite structure
+    Export GPG keys
     """
-    GPGDIR = targetdir
-    if not os.path.exists(GPGDIR):
-        os.makedirs(GPGDIR)
-    if not os.path.exists(GPGDIR + "/katello"):
-        os.makedirs(GPGDIR + "/katello")
-    if not os.path.exists(GPGDIR + "/katello/api"):
-        os.makedirs(GPGDIR + "/katello/api")
-    if not os.path.exists(GPGDIR + "/katello/api/repositories"):
-        os.makedirs(GPGDIR + "/katello/api/repositories")
+    if not os.path.exists(targetdir):
+        os.makedirs(targetdir)
+    if not plain:
+        if not os.path.exists(targetdir + "/katello"):
+            os.makedirs(targetdir + "/katello")
+        if not os.path.exists(targetdir + "/katello/api"):
+            os.makedirs(targetdir + "/katello/api")
+        if not os.path.exists(targetdir + "/katello/api/repositories"):
+            os.makedirs(targetdir + "/katello/api/repositories")
+        fakedir = targetdir + "/katello/api/repositories/"
     for gpg in gpg_result:
         for repo in gpg['repositories']:
-            if not os.path.exists(GPGDIR + "/katello/api/repositories/" + str(repo['id'])):
-                os.makedirs(GPGDIR + "/katello/api/repositories/" + str(repo['id']))
-            key_file = open(GPGDIR + "/katello/api/repositories/" + str(repo['id']) + "/gpg_key_content", "w")
+            if plain:
+                key_file = open(targetdir + "/" + str(repo['id']) + ".gpg", "w")
+            else:
+                if not os.path.exists(fakedir + str(repo['id'])):
+                    os.makedirs(fakedir + str(repo['id']))
+                key_file = open(fakedir + str(repo['id']) + "/gpg_key_content", "w")
             key_file.write(gpg['content'])
             key_file.close
 
@@ -61,10 +65,12 @@ def main(args):
     # pylint: disable=bad-continuation
     parser.add_argument('-o', '--org', help='Organization (Uses default if not specified)',
         required=False)
-    parser.add_argument('-d', '--dryrun', help='Dry Run - Only show what will be cleaned',
+    parser.add_argument('-d', '--dryrun', help='Dry Run - Only show GPG keys',
         required=False, action="store_true")
     parser.add_argument('-t', '--target', help='Define target director for keys',
         required=True)
+    parser.add_argument('-p', '--plain', help='No faked directory structure for satellite',
+        required=False, action="store_true")
 
     args = parser.parse_args()
 
@@ -73,6 +79,10 @@ def main(args):
         org_name = args.org
     else:
         org_name = helpers.ORG_NAME
+    if args.plain:
+        plain = args.plain
+    else:
+        plain = False
     dry_run = args.dryrun
 
     # Get the org_id (Validates our connection to the API)
@@ -84,7 +94,9 @@ def main(args):
     # store GPG keys to given export dir
     if not dry_run:
         targetdir = args.target
-        store_gpg(gpg_result,targetdir)
+        store_gpg(gpg_result,targetdir,plain)
+    else:
+        print json.dumps(gpg_result, indent=4, sort_keys=False)
 
     # Exit cleanly
     sys.exit(0)
