@@ -94,7 +94,7 @@ def cleanup(ver_list, ver_descr, dry_run, runuser, ver_keep, cleanall, ignorefir
         helpers.log_msg(msg, 'ERROR')
         sys.exit(1)
 
-    for cvid in ver_list.keys():
+    for cvid in sorted(ver_list.keys(),reverse=True):
         # Check if there is a publish/promote already running on this content view
         locked = helpers.check_running_publish(ver_list[cvid], ver_descr[cvid])
 
@@ -198,7 +198,8 @@ def cleanup(ver_list, ver_descr, dry_run, runuser, ver_keep, cleanall, ignorefir
                                     "id": cvid,
                                     "content_view_version_ids": version['id']
                                 }
-                                ))['id']
+                            )
+                        )['id']
 
                         # Wait for the task to complete
                         helpers.wait_for_task(task_id,'clean')
