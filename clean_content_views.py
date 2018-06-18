@@ -191,7 +191,7 @@ def cleanup(ver_list, ver_descr, dry_run, runuser, ver_keep, cleanall, ignorefir
                 # Delete the view version from the content view
                 if not dry_run and not locked:
                     try:
-                        task_id = helpers.put_json(
+                        task = helpers.put_json(
                             helpers.KATELLO_API + "content_views/" + str(cvid) + "/remove/",
                             json.dumps(
                                 {
@@ -199,20 +199,27 @@ def cleanup(ver_list, ver_descr, dry_run, runuser, ver_keep, cleanall, ignorefir
                                     "content_view_version_ids": version['id']
                                 }
                             )
-                        )['id']
+                        )
 
-                        # Wait for the task to complete
-                        helpers.wait_for_task(task_id,'clean')
+                        if id in task:
+                            task_id = task['id']
 
-                        # Check if the deletion completed successfully
-                        tinfo = helpers.get_task_status(task_id)
-                        if tinfo['state'] != 'running' and tinfo['result'] == 'success':
-                            msg = "Removal of content view version OK"
-                            helpers.log_msg(msg, 'INFO')
-                            print helpers.GREEN + "OK" + helpers.ENDC
+                            # Wait for the task to complete
+                            helpers.wait_for_task(task_id,'clean')
+    
+                            # Check if the deletion completed successfully
+                            tinfo = helpers.get_task_status(task_id)
+                            if tinfo['state'] != 'running' and tinfo['result'] == 'success':
+                                msg = "Removal of content view version OK"
+                                helpers.log_msg(msg, 'INFO')
+                                print helpers.GREEN + "OK" + helpers.ENDC
+                            else:
+                                msg = "Failed"
+                                helpers.log_msg(msg, 'ERROR')
                         else:
-                            msg = "Failed"
-                            helpers.log_msg(msg, 'ERROR')
+                            msg = "Can't remove content view " + str(cvid)
+                            helpers.log_msg(msg, 'INFO')
+                            print helpers.HEADER + msg + helpers.ENDC
 
                     except Warning:
                         msg = "Failed to initiate removal"
