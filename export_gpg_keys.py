@@ -39,6 +39,13 @@ def store_gpg(gpg_result,targetdir,plain):
             os.makedirs(targetdir + "/katello/api")
         if not os.path.exists(targetdir + "/katello/api/repositories"):
             os.makedirs(targetdir + "/katello/api/repositories")
+        """
+        Symlink v2 API with v1
+        """
+        if not os.path.exists(targetdir + "/katello/api/v2"):
+            os.makedirs(targetdir + "/katello/api/v2")
+        if not os.path.islink(targetdir + "/katello/api/v2/repositories"):
+            os.symlink("../repositories", targetdir + "/katello/api/v2/repositories")
         fakedir = targetdir + "/katello/api/repositories/"
     for gpg in gpg_result:
         for repo in gpg['repositories']:
